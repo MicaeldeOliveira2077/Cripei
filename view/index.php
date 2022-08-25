@@ -1,24 +1,16 @@
 <?php
 
-/**
- * Inclui o arquivo de configuração global do aplicativo:
- */
+// Inclui o arquivo de configuração global do aplicativo:
 require($_SERVER['DOCUMENT_ROOT'] . '/_config.php');
 
-/**
- * Define o título desta página:
- */
+// Define o título desta página:
 $page_title = 'Artigo Completo';
 
-/**
- * Define o conteúdo principal desta página:
- */
-$page_article = '';
+// Define o conteúdo principal desta página:
+$page_article = "<h2>{$page_title}</h2>";
 
-/**
- * Define o conteúdo da barra lateral desta página:
- */
-$page_aside = '';
+// Define o conteúdo da barra lateral desta página:
+$page_aside = '<h3>Barra lateral</h3>';
 
 /***********************************************
  * Todo o código PHP desta página começa aqui! *
@@ -60,38 +52,21 @@ $page_title = $art['art_title'];
 // Obtém o nome do autor em partes:
 $parts = explode(' ', $art['user_name']);
 $autor_name = $parts[0] . " " . $parts[count($parts) - 1];
-
-$author_date = "Por {$autor_name} em {$art['datebr']}.";
+$author_date = "Por {$autor_name}.<br>Em {$art['datebr']}.";
 
 // Formata o conteúdo:
 $page_article = <<<HTML
 
 <h2>{$art['art_title']}</h2>
-<small>{$author_date}</small>
+<div class="autor-date">{$author_date}</div>
 <div>{$art['art_content']}</div>
 
 <a id="comments"></a>
 
 HTML;
 
-/**
- * Calcula idade do autor:
- */
-
-// Partes da data de nascimento:
-$birth_parts = explode('-', $art['user_birth']);
-
-// Partes da data atual:
-$now_parts = explode('-', date('Y-m-d'));
-
-// Calcula idade pelo ano:
-$age = $now_parts[0] - $birth_parts[0];
-
-// Ajusta idade pelo mês e dia:
-if ($now_parts[1] < $birth_parts[1])
-    $age--;
-elseif (($now_parts[1] == $birth_parts[1]) && ($now_parts[2] < $birth_parts[2]))
-    $age--;
+// Obtém a idade do usuário:
+$age = get_age($art['user_birth']);
 
 // Obtém mais artigos do autor:
 $sql = <<<SQL
@@ -114,7 +89,7 @@ $author_arts = '';
 if ($res->num_rows > 0) :
 
     // Prepara a listagem dos artigos:
-    $author_arts = '<h5 class="more-articles">+ Artigos</h5><ul>';
+    $author_arts = '<h4 class="more-articles">+ Artigos</h4><ul>';
 
     // Loop para obter cada artigo:
     while ($author_art = $res->fetch_assoc()) :
@@ -139,10 +114,10 @@ $page_aside = <<<HTML
     <img src="{$art['user_avatar']}" alt="{$art['user_name']}">
     <h4>{$art['user_name']}</h4>
     <h5 class="age">{$age} anos</h5>
-    <p>{$art['user_bio']}</p>
-    {$author_arts}
+    <p><small>{$art['user_bio']}</small></p>
 
-</div>
+</div>    
+{$author_arts}
 
 HTML;
 
@@ -153,28 +128,31 @@ $counter = intval($art['art_counter']) + 1;
 $sql = "UPDATE articles SET art_counter = '{$counter}' WHERE art_id = '{$id}';";
 $conn->query($sql);
 
-/***********************************
- * Fim do código PHP desta página! *
- ***********************************/
+// Insere script de processamento de comentários:
+require('comments.php');
 
-/**
- * Inclui o cabeçalho do template nesta página:
- */
-require($_SERVER['DOCUMENT_ROOT'] . '/_header.php');
+// Exibe comentários prontos na página:
+$page_article .= <<<HTML
 
-/**
- * Exibe o conteúdo da página:
- */
-
-echo <<<HTML
-
-<article>{$page_article}</article>
-
-<aside>{$page_aside}</aside>
+<hr class="separator">
+<h3>Comentários ($total_comments)</h3>
+{$comments}
 
 HTML;
 
-/**
- * Inclui o rodapé do template nesta página.
- */
+/**************************************
+ * Fim do código PHP desta página!    *
+ * Cuidado ao alterar o código abaixo *
+ **************************************/
+
+// Inclui o cabeçalho do template nesta página:
+require($_SERVER['DOCUMENT_ROOT'] . '/_header.php');
+
+// Exibe o conteúdo da página:
+echo "<article>{$page_article}</article>";
+
+// Exibe a barra lateral da página, mas só se ela não estiver vazia:
+if ($page_aside != '') echo "<aside>{$page_aside}</aside>";
+
+// Inclui o rodapé do template nesta página.
 require($_SERVER['DOCUMENT_ROOT'] . '/_footer.php');
